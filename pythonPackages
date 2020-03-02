@@ -1,0 +1,33 @@
+#!/bin/sh
+
+sed  -n '/==/{s/,//; s/\t//gp}' dependencies.json  > updatedDependencyList.json
+file="/home/pdmlink/Desktop/Tweet/updatedDependencyList.json"
+while IFS= read line
+do
+if grep -q "==" <<< "$line";
+	then
+	 append="pip install "
+	 echo "Installing $line"
+	 $append$line
+	fi
+done <"$file"
+
+sed  -n '/==/{s/,//; s/==/-/g; s/\t//gp}' dependencies.json  > updatedDependencyList.json
+file1="/home/pdmlink/Desktop/Tweet/updatedDependencyList.json"
+
+rpm -qa > installedPackages.txt
+echo The following packages could not be installed: 
+while IFS= read line1
+	do
+	echo `grep -i -o $(echo $line1| tr -d '\r') installedPackages.txt` >> installedPackagesFromList.txt
+done <"$file1"
+
+sed -i '/^$/d' installedPackagesFromList.txt
+sed -i 's/\r//g' updatedDependencyList.json
+
+diff updatedDependencyList.json uninstalledPackages.txt | grep -v "^[0-9]" > finalList.txt
+
+if [ -s finalList.txt ];
+ then cat finalList.txt
+ else echo "Success"
+fi
